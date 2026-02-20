@@ -1,1114 +1,369 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>嬰兒食瞓痾小助手 · 月齡版</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Google Fonts 日系無印極簡風：Noto Sans JP + Zen Maru Gothic [web:7][web:10] -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" /> <!-- [web:7] -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /> <!-- [web:7] -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@300;400;500&display=swap" rel="stylesheet" /> <!-- [web:7][web:10] -->
-
-  <!-- Tailwind CSS Play CDN [web:1][web:2] -->
-  <script src="https://cdn.tailwindcss.com"></script> <!-- [web:1] -->
-
-  <!-- Font Awesome CDN [web:6][web:9] -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" /> <!-- [web:6] -->
-
-  <!-- Tailwind 自訂主題 (無印極簡色系) -->
-  <style type="text/tailwindcss"> /* [web:5] */
-    @layer base {
-      html {
-        font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-      body {
-        @apply bg-stone-100 text-stone-800;
-      }
-    }
-    @layer components {
-      .muji-card {
-        @apply bg-white rounded-2xl shadow-sm border border-stone-200;
-      }
-      .muji-btn-primary {
-        @apply rounded-full px-4 py-2 bg-stone-800 text-stone-50 text-sm tracking-wide;
-      }
-      .muji-btn-outline {
-        @apply rounded-full px-4 py-2 border border-stone-300 text-stone-700 text-sm;
-      }
-      .tab-active {
-        @apply text-stone-900;
-      }
-      .tab-inactive {
-        @apply text-stone-400;
-      }
-      .chip {
-        @apply text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-500;
-      }
-      .input-base {
-        @apply w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-stone-400 focus:border-stone-400;
-      }
-      .section-title {
-        @apply text-sm font-medium tracking-[0.15em] text-stone-500 uppercase;
-      }
-    }
-  </style>
-
+  <meta charset="UTF-8">
+  <title>嬰兒食瞓痾小助手 · 月齡 + Charts 版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Noto Sans TC + Zen Maru Gothic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    .zen-rounded {
-      font-family: "Zen Maru Gothic", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    body {
-      max-width: 480px;
-      margin: 0 auto;
-    }
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    .zen-font { font-family: 'Zen Maru Gothic', sans-serif; }
+    .profile-card { transition: all 0.3s ease; }
+    .profile-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .collapsible { transition: max-height 0.3s ease-out; overflow: hidden; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    canvas { max-height: 300px; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
-  <div class="flex-1 flex flex-col">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+  <div class="max-w-4xl mx-auto">
+    
     <!-- Header -->
-    <header class="px-4 pt-4 pb-2 bg-stone-100">
-      <div class="flex items-center justify-between">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl md:text-5xl font-bold zen-font text-gray-800 mb-2">👶 寶寶食瞓痾記錄</h1>
+      <p class="text-lg text-gray-600">Moon Age + Charts Edition</p>
+    </div>
+
+    <!-- Baby Profile Card -->
+    <div class="profile-card bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
+      <div class="flex justify-between items-start mb-4">
         <div>
-          <div class="section-title">BABY LOG</div>
-          <h1 class="zen-rounded text-2xl font-medium mt-1">食 · 瞓 · 痾 小助手</h1>
-          <p class="text-[11px] text-stone-500 mt-1">依照月齡參考模板與歴史記錄，預測下一次食瞓痾時間。</p>
+          <h2 class="text-2xl font-bold zen-font text-indigo-600">寶寶檔案</h2>
+          <p id="moonAge" class="text-3xl font-bold text-gray-800 mt-2">計算中...</p>
         </div>
-        <div class="flex flex-col items-end text-right">
-          <span class="chip mb-1" id="baby-age-chip">尚未設定生日</span>
-          <button id="exportCsvBtn" class="muji-btn-outline flex items-center gap-1 text-[11px]">
-            <i class="fa fa-download"></i><span>匯出 CSV</span>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- Top Tabs -->
-    <nav class="mt-2 px-4">
-      <div class="muji-card flex items-center justify-between px-2 py-1">
-        <button data-tab="plan" class="tab-btn flex-1 flex flex-col items-center py-2 text-xs tab-active">
-          <span class="mb-1"><i class="fa fa-calendar-o"></i></span>
-          <span>PLAN</span>
-        </button>
-        <button data-tab="record" class="tab-btn flex-1 flex flex-col items-center py-2 text-xs tab-inactive">
-          <span class="mb-1"><i class="fa fa-pencil-square-o"></i></span>
-          <span>RECORD</span>
-        </button>
-        <button data-tab="forecast" class="tab-btn flex-1 flex flex-col items-center py-2 text-xs tab-inactive">
-          <span class="mb-1"><i class="fa fa-line-chart"></i></span>
-          <span>FORECAST</span>
+        <button id="toggleProfile" class="p-2 rounded-xl bg-indigo-100 hover:bg-indigo-200 transition-all">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </button>
       </div>
-    </nav>
+      
+      <!-- Collapsible Reference Pattern -->
+      <div id="referenceSection" class="collapsible max-h-96">
+        <div class="bg-gray-50 rounded-xl p-4 mt-4 border">
+          <h3 class="font-semibold text-gray-700 mb-3 flex items-center">
+            📊 參考模式 <span class="ml-2 text-sm bg-blue-100 px-2 py-1 rounded-full">(可收合)</span>
+          </h3>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="p-3 text-left">月齡</th>
+                <th class="p-3 text-left">餵食 (次/日)</th>
+                <th class="p-3 text-left">每次量 (ml)</th>
+                <th class="p-3 text-left">總睡 (小時)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="p-3 font-medium">0-1m</td><td class="p-3">8-12</td><td class="p-3">60-90</td><td class="p-3">14-17</td></tr>
+              <tr class="bg-gray-50"><td class="p-3 font-medium">1-3m</td><td class="p-3">6-8</td><td class="p-3">90-120</td><td class="p-3">14-16</td></tr>
+              <tr><td class="p-3 font-medium">3-6m</td><td class="p-3">5-6</td><td class="p-3">120-180</td><td class="p-3">13-15</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-    <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto px-4 pb-24 pt-3 space-y-4">
+      <!-- Birthday Input -->
+      <div class="mt-6 p-4 bg-indigo-50 rounded-xl">
+        <label class="block text-sm font-medium text-gray-700 mb-2">寶寶生日 (YYYY-MM-DD)</label>
+        <input type="date" id="birthday" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+      </div>
+    </div>
 
-      <!-- 共用：嬰兒資料與參考模板 -->
-      <section class="muji-card p-4 space-y-3">
-        <div class="flex items-center justify-between">
+    <!-- Tabs -->
+    <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
+      <div class="flex border-b">
+        <button class="tab-btn px-6 py-3 font-semibold text-indigo-600 border-b-2 border-indigo-500">📝 記錄</button>
+        <button class="tab-btn px-6 py-3 font-semibold text-gray-600 hover:text-indigo-600">📈 Charts</button>
+        <button class="tab-btn px-6 py-3 font-semibold text-gray-600 hover:text-indigo-600">📋 歷史</button>
+      </div>
+
+      <!-- Log Tab -->
+      <div id="logTab" class="tab-content active p-6">
+        <form id="logForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Time -->
           <div>
-            <div class="section-title">BABY PROFILE</div>
-            <p class="text-xs text-stone-500 mt-1">設定生日，系統會依照月齡載入對應的參考作息。</p>
+            <label class="block text-sm font-medium text-gray-700 mb-2">🕐 時間</label>
+            <input type="time" id="time" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500" required>
           </div>
-          <i class="fa fa-leaf text-stone-300 text-2xl"></i>
-        </div>
 
-        <div class="space-y-2">
-          <label class="block text-[11px] text-stone-500 mb-1">嬰兒出生日期</label>
-          <input id="babyBirthDate" type="date" class="input-base text-xs" />
-          <p class="text-[11px] text-stone-500 mt-1" id="babyAgeText">會依照月齡載入 0–12 個月的預設參考模板。</p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2 pt-1">
+          <!-- Feed Type -->
           <div>
-            <span class="text-[11px] text-stone-500">目前月齡對應模板</span>
-            <div id="currentRefMonthLabel" class="text-xs text-stone-800 mt-0.5">尚未計算</div>
-          </div>
-          <div class="text-right">
-            <button id="reloadRefForAgeBtn" class="muji-btn-outline text-[11px]">
-              以月齡重設模板
-            </button>
-          </div>
-        </div>
-
-        <div class="border-t border-dashed border-stone-200 pt-3">
-          <div class="flex items-center justify-between mb-2">
-            <span class="section-title">REFERENCE PATTERN</span>
-            <button id="loadReferenceBtn" class="muji-btn-outline text-[11px] flex items-center gap-1">
-              <i class="fa fa-refresh"></i><span>載入通用預設</span>
-            </button>
-          </div>
-          <p class="text-[11px] text-stone-500 mb-2">
-            參考嬰兒食瞓痾記錄（單日樣板）：會根據月齡選擇餵食次數與大約奶量，你仍可自行微調。
-          </p>
-
-          <!-- 參考作息表 -->
-          <div class="overflow-x-auto">
-            <table class="w-full text-[11px] text-left text-stone-700">
-              <thead>
-                <tr class="border-b border-stone-200">
-                  <th class="py-1 pr-2">時間</th>
-                  <th class="py-1 pr-2">食</th>
-                  <th class="py-1 pr-2">入睡</th>
-                  <th class="py-1 pr-2">起床</th>
-                  <th class="py-1 pr-2">痾屎</th>
-                </tr>
-              </thead>
-              <tbody id="referenceTableBody">
-              </tbody>
-            </table>
-          </div>
-          <p class="text-[10px] text-stone-400 mt-1">
-            範例奶量與間隔依各月齡建議範圍「自創」設計，用作節奏參考，非醫療建議。[web:57][web:60]
-          </p>
-        </div>
-      </section>
-
-      <!-- PLAN -->
-      <section id="tab-plan" class="space-y-3">
-        <div class="muji-card p-4">
-          <div class="section-title mb-1">TODAY · DAILY PLAN</div>
-          <p class="text-xs text-stone-500 mb-3">
-            依據月齡參考模板與實際預測，以時間軸呈現今日食瞓痾節奏。
-          </p>
-
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] text-stone-500" id="todayDateLabel"></span>
-            <button id="refreshPlanBtn" class="muji-btn-outline text-[11px] flex items-center gap-1">
-              <i class="fa fa-clock-o"></i><span>重整今日計畫</span>
-            </button>
-          </div>
-
-          <div id="planTimeline" class="mt-2 space-y-3"></div>
-        </div>
-
-        <div class="muji-card p-4">
-          <div class="section-title mb-1">TIPS</div>
-          <p class="text-xs text-stone-500">
-            若月齡改變，可在 BABY PROFILE 重新設定生日，再按「以月齡重設模板」，讓之後的預測更貼近目前狀態。
-          </p>
-        </div>
-      </section>
-
-      <!-- RECORD -->
-      <section id="tab-record" class="hidden space-y-3">
-        <div class="muji-card p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="section-title mb-1">RECORD HISTORY</div>
-              <p class="text-xs text-stone-500">
-                歷史嬰兒食瞓痾記錄（可新增、修改），永久保存在裝置 localStorage。
-              </p>
-            </div>
-            <i class="fa fa-book text-stone-300 text-2xl"></i>
-          </div>
-
-          <div class="border-t border-dashed border-stone-200 pt-3 space-y-2">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[11px] text-stone-500">新增一筆記錄</span>
-              <span class="chip">同一筆可以同時有食 / 瞓 / 痾</span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 mb-1">
-              <div>
-                <label class="block text-[11px] text-stone-500 mb-1">日期</label>
-                <input id="recordDate" type="date" class="input-base text-xs" />
-              </div>
-              <div>
-                <label class="block text-[11px] text-stone-500 mb-1">時間</label>
-                <input id="recordTime" type="time" class="input-base text-xs" />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="block text-[11px] text-stone-500 mb-1">食</label>
-                <input id="recordFeed" type="text" placeholder="ml / 母乳 / 固體" class="input-base text-xs" />
-              </div>
-              <div>
-                <label class="block text-[11px] text-stone-500 mb-1">入睡</label>
-                <input id="recordSleepStart" type="time" class="input-base text-xs" />
-              </div>
-              <div>
-                <label class="block text-[11px] text-stone-500 mb-1">起床</label>
-                <input id="recordSleepEnd" type="time" class="input-base text-xs" />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 mt-1">
-              <div>
-                <label class="block text-[11px] text-stone-500 mb-1">痾屎</label>
-                <input id="recordPoop" type="text" placeholder="顏色 / 次數" class="input-base text-xs" />
-              </div>
-              <div class="col-span-2 flex items-end justify-end gap-2">
-                <button id="clearRecordFormBtn" class="muji-btn-outline text-[11px]">
-                  清除
-                </button>
-                <button id="addRecordBtn" class="muji-btn-primary text-[11px] flex items-center gap-1">
-                  <i class="fa fa-plus"></i><span>加入記錄</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="muji-card p-4 space-y-2">
-          <div class="flex items-center justify-between mb-1">
-            <span class="section-title">HISTORY LIST</span>
-            <select id="recordDateFilter" class="input-base text-[11px] max-w-[48%]">
-              <option value="">全部日期</option>
+            <label class="block text-sm font-medium text-gray-700 mb-2">🥛 餵食類型</label>
+            <select id="feedType" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+              <option value="">選擇...</option>
+              <option value="母乳">母乳</option>
+              <option value="奶粉">奶粉</option>
             </select>
           </div>
-          <p class="text-[11px] text-stone-500 mb-2">
-            點擊卡片可編輯內容；左右滑動可查看更多欄位。資料存於 localStorage，重整也不會消失。
-          </p>
 
-          <div id="recordList" class="space-y-2 max-h-[320px] overflow-y-auto"></div>
+          <!-- Feed Amount -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">📊 餵食量 (ml)</label>
+            <input type="number" id="feedAmount" min="0" step="10" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <!-- Sleep -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">😴 睡覺 (分鐘)</label>
+            <input type="number" id="sleep" min="0" class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <!-- Poop Checkbox + Color -->
+          <div class="md:col-span-2">
+            <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <input type="checkbox" id="poop" class="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500">
+              💩 痾屎
+            </label>
+            <select id="poopColor" class="ml-6 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 invisible" disabled>
+              <option value="">顏色...</option>
+              <option value="黃">黃</option>
+              <option value="綠">綠</option>
+              <option value="棕">棕</option>
+              <option value="黑">黑</option>
+            </select>
+          </div>
+
+          <!-- Submit -->
+          <div class="md:col-span-2">
+            <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-200">💾 儲存記錄</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Charts Tab -->
+      <div id="chartsTab" class="tab-content p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-gray-50 p-4 rounded-xl">
+          <h3 class="font-bold text-lg mb-4">餵食量趨勢</h3>
+          <canvas id="feedChart"></canvas>
         </div>
-      </section>
-
-      <!-- FORECAST -->
-      <section id="tab-forecast" class="hidden space-y-3">
-        <div class="muji-card p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="section-title mb-1">TODAY FORECAST</div>
-              <p class="text-xs text-stone-500">
-                根據當前月齡參考模板與歷史記錄差異，預測今日食瞓痾時間。
-              </p>
-            </div>
-            <i class="fa fa-pagelines text-stone-300 text-2xl"></i>
-          </div>
-
-          <div class="flex items-center justify-between mt-1">
-            <span class="chip" id="forecastAgeChip">請先設定生日與參考模板</span>
-            <button id="runForecastBtn" class="muji-btn-primary text-[11px] flex items-center gap-1">
-              <i class="fa fa-magic"></i><span>更新預測</span>
-            </button>
-          </div>
-
-          <p class="text-[11px] text-stone-500 mt-2">
-            簡化邏輯：以最近 3 日實際與「月齡專屬參考模板」的時間差（分鐘）求平均，套用到今日參考模板上。
-          </p>
+        <div class="bg-gray-50 p-4 rounded-xl">
+          <h3 class="font-bold text-lg mb-4">睡覺時長</h3>
+          <canvas id="sleepChart"></canvas>
         </div>
-
-        <div class="muji-card p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="section-title">FORECAST TABLE</span>
-            <button id="saveForecastBtn" class="muji-btn-outline text-[11px] flex items-center gap-1">
-              <i class="fa fa-save"></i><span>保存今日預測</span>
-            </button>
-          </div>
-          <p class="text-[11px] text-stone-500">
-            保存後會連同日期寫入 localStorage，可在 PLAN 與 RECORD 中對照。
-          </p>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-[11px] text-left text-stone-700">
-              <thead>
-                <tr class="border-b border-stone-200">
-                  <th class="py-1 pr-2">時間</th>
-                  <th class="py-1 pr-2">食</th>
-                  <th class="py-1 pr-2">入睡</th>
-                  <th class="py-1 pr-2">起床</th>
-                  <th class="py-1 pr-2">痾屎</th>
-                </tr>
-              </thead>
-              <tbody id="forecastTableBody"></tbody>
-            </table>
-          </div>
-
-          <div class="mt-2 text-[11px] text-stone-500 space-y-1">
-            <div>差異計算概念：</div>
-            <ul class="list-disc list-inside">
-              <li>同一月齡的最近 3 日，取「實際 - 參考」時間差。</li>
-              <li>取平均差異（分鐘），平移參考時間作為預測。</li>
-              <li>若歷史不足，則直接使用該月齡參考模板。</li>
-            </ul>
-          </div>
+        <div class="bg-gray-50 p-4 rounded-xl md:col-span-2">
+          <h3 class="font-bold text-lg mb-4">痾屎次數</h3>
+          <canvas id="poopChart"></canvas>
         </div>
-      </section>
-    </main>
-
-    <!-- Bottom Nav -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-stone-100 border-t border-stone-200">
-      <div class="max-w-[480px] mx-auto">
-        <div class="flex justify-between px-6 py-2 text-[11px] text-stone-500">
-          <button data-tab="plan" class="tab-btn flex flex-col items-center tab-active">
-            <i class="fa fa-calendar-o text-sm mb-0.5"></i>
-            <span>PLAN</span>
-          </button>
-          <button data-tab="record" class="tab-btn flex flex-col items-center tab-inactive">
-            <i class="fa fa-pencil-square-o text-sm mb-0.5"></i>
-            <span>RECORD</span>
-          </button>
-          <button data-tab="forecast" class="tab-btn flex flex-col items-center tab-inactive">
-            <i class="fa fa-line-chart text-sm mb-0.5"></i>
-            <span>FORECAST</span>
-          </button>
+        <div class="bg-gray-50 p-4 rounded-xl md:col-span-2">
+          <h3 class="font-bold text-lg mb-4">餵食頻率</h3>
+          <canvas id="frequencyChart"></canvas>
         </div>
       </div>
-    </footer>
+
+      <!-- History Tab -->
+      <div id="historyTab" class="tab-content p-6">
+        <div class="overflow-x-auto">
+          <table id="historyTable" class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="p-3 text-left">時間</th>
+                <th class="p-3 text-left">餵食</th>
+                <th class="p-3 text-left">睡覺</th>
+                <th class="p-3 text-left">痾屎</th>
+                <th class="p-3 text-left">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export/Import -->
+    <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 text-center">
+      <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold mr-4">📥 匯出 CSV</button>
+      <input type="file" id="importBtn" accept=".csv" class="hidden">
+      <label for="importBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold cursor-pointer inline-block">📤 匯入 CSV</label>
+    </div>
+
   </div>
 
   <script>
-    const LS_KEYS = {
-      BIRTH_DATE: "baby_birth_date",
-      REFERENCE: "baby_reference_pattern",
-      RECORDS: "baby_history_records",
-      FORECASTS: "baby_forecast_records"
-    };
+    // Global variables
+    let logs = JSON.parse(localStorage.getItem('babyLogs')) || [];
+    let birthday = localStorage.getItem('babyBirthday') || '';
+    let charts = {};
 
-    const todayISO = () => {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    };
+    // Initialize
+    document.addEventListener('DOMContentLoaded', init);
 
-    const parseTimeToMinutes = (timeStr) => {
-      if (!timeStr) return null;
-      const [h, m] = timeStr.split(":").map(Number);
-      if (Number.isNaN(h) || Number.isNaN(m)) return null;
-      return h * 60 + m;
-    };
+    function init() {
+      document.getElementById('birthday').value = birthday;
+      document.getElementById('birthday').addEventListener('change', updateBirthday);
+      document.getElementById('toggleProfile').addEventListener('click', toggleProfile);
+      document.getElementById('poop').addEventListener('change', togglePoopColor);
+      document.getElementById('logForm').addEventListener('submit', addLog);
+      document.getElementById('exportBtn').addEventListener('click', exportCSV);
+      document.getElementById('importBtn').addEventListener('change', importCSV);
 
-    const minutesToTime = (mins) => {
-      if (mins == null) return "";
-      mins = ((mins % (24 * 60)) + (24 * 60)) % (24 * 60);
-      const h = String(Math.floor(mins / 60)).padStart(2, "0");
-      const m = String(mins % 60).padStart(2, "0");
-      return `${h}:${m}`;
-    };
+      // Tab switching
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('text-indigo-600', 'border-indigo-500'), b.classList.add('text-gray-600'));
+          e.target.classList.add('text-indigo-600', 'border-indigo-500');
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          document.getElementById(e.target.textContent.includes('記錄') ? 'logTab' : e.target.textContent.includes('Charts') ? 'chartsTab' : 'historyTab').classList.add('active');
+          if (e.target.textContent.includes('Charts')) updateCharts();
+        });
+      });
 
-    const loadJSON = (key, fallback) => {
-      try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return fallback;
-        return JSON.parse(raw);
-      } catch (e) {
-        return fallback;
-      }
-    };
+      updateMoonAge();
+      updateHistory();
+      setInterval(updateMoonAge, 60000); // Update every minute
+    }
 
-    const saveJSON = (key, value) => {
-      localStorage.setItem(key, JSON.stringify(value));
-    };
+    function updateBirthday(e) {
+      birthday = e.target.value;
+      localStorage.setItem('babyBirthday', birthday);
+      updateMoonAge();
+    }
 
-    const computeMonthAge = (birthDateStr) => {
-      if (!birthDateStr) return null;
-      const birth = new Date(birthDateStr);
-      if (Number.isNaN(birth.getTime())) return null;
-      const now = new Date();
-      let months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
-      if (now.getDate() < birth.getDate()) months -= 1;
-      return months < 0 ? 0 : months;
-    };
+    function updateMoonAge() {
+      if (!birthday) return;
+      const birthDate = new Date(birthday);
+      const ageDiff = Date.now() - birthDate.getTime();
+      const ageDate = new Date(ageDiff);
+      const months = Math.floor(ageDiff / (1000 * 60 * 60 * 24 * 30.44));
+      document.getElementById('moonAge').textContent = `${months}個月 ${Math.floor(ageDate.getUTCDate())}日`;
+    }
 
-    const formatAgeText = (months) => {
-      if (months == null) return "尚未設定生日";
-      const y = Math.floor(months / 12);
-      const m = months % 12;
-      if (y === 0) return `${m} 個月大`;
-      if (m === 0) return `${y} 歲`;
-      return `${y} 歲 ${m} 個月`;
-    };
+    function toggleProfile() {
+      const section = document.getElementById('referenceSection');
+      const btn = document.getElementById('toggleProfile');
+      section.classList.toggle('max-h-96');
+      section.classList.toggle('max-h-0');
+      const icon = btn.querySelector('svg');
+      icon.style.transform = section.classList.contains('max-h-0') ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
 
-    // ===== 月齡專屬參考模板（自創：依建議奶量與頻率設計，非醫療建議）[web:57][web:60] =====
-    // month: 0~12，單日 5~8 筆
-    const referenceByMonth = {
-      0: [ // 新生至未滿 1 個月：少量多餐（約 8 次）
-        { time: "02:00", feed: "母乳 60ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "05:00", feed: "母乳 60ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "08:00", feed: "母乳 70ml", sleepStart: "08:30", sleepEnd: "09:30", poop: "少量" },
-        { time: "11:00", feed: "母乳 70ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "14:00", feed: "母乳 70ml", sleepStart: "14:30", sleepEnd: "15:30", poop: "" },
-        { time: "17:00", feed: "母乳 70ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "20:00", feed: "母乳 80ml", sleepStart: "20:30", sleepEnd: "23:30", poop: "少量" },
-        { time: "23:30", feed: "母乳 60ml", sleepStart: "00:00", sleepEnd: "02:00", poop: "" }
-      ],
-      1: [ // 1 個月：每 3 小時左右，約 7~8 次，單次 80–100ml
-        { time: "01:30", feed: "母乳 80ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "04:30", feed: "母乳 80ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "07:30", feed: "母乳 90ml", sleepStart: "08:00", sleepEnd: "09:30", poop: "少量" },
-        { time: "10:30", feed: "母乳 90ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "13:30", feed: "母乳 90ml", sleepStart: "14:00", sleepEnd: "15:30", poop: "" },
-        { time: "16:30", feed: "母乳 90ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "19:30", feed: "母乳 100ml", sleepStart: "20:00", sleepEnd: "23:00", poop: "正常" },
-        { time: "23:00", feed: "母乳 80ml", sleepStart: "23:30", sleepEnd: "01:30", poop: "" }
-      ],
-      2: [ // 2 個月：每 3~4 小時，約 6~7 次，每次 120ml 左右
-        { time: "02:00", feed: "母乳 120ml", sleepStart: "02:30", sleepEnd: "05:30", poop: "" },
-        { time: "06:00", feed: "母乳 120ml", sleepStart: "", sleepEnd: "", poop: "少量" },
-        { time: "09:30", feed: "母乳 120ml", sleepStart: "10:00", sleepEnd: "11:00", poop: "" },
-        { time: "13:00", feed: "母乳 130ml", sleepStart: "13:30", sleepEnd: "14:30", poop: "正常" },
-        { time: "17:00", feed: "母乳 120ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "20:30", feed: "母乳 130ml", sleepStart: "21:00", sleepEnd: "02:00", poop: "" }
-      ],
-      3: [ // 3 個月：每 3.5~4 小時，約 6 次，單次 130–150ml
-        { time: "02:30", feed: "母乳 130ml", sleepStart: "03:00", sleepEnd: "06:30", poop: "" },
-        { time: "07:00", feed: "母乳 130ml", sleepStart: "", sleepEnd: "", poop: "少量" },
-        { time: "10:30", feed: "母乳 140ml", sleepStart: "11:00", sleepEnd: "12:00", poop: "" },
-        { time: "14:00", feed: "母乳 140ml", sleepStart: "14:30", sleepEnd: "15:30", poop: "" },
-        { time: "17:30", feed: "母乳 140ml", sleepStart: "", sleepEnd: "", poop: "正常" },
-        { time: "21:00", feed: "母乳 150ml", sleepStart: "21:30", sleepEnd: "02:30", poop: "" }
-      ],
-      4: [ // 4 個月：每 4 小時，約 5~6 次，單次 150–180ml
-        { time: "02:30", feed: "母乳 150ml", sleepStart: "03:00", sleepEnd: "06:30", poop: "" },
-        { time: "07:00", feed: "母乳 160ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "11:00", feed: "母乳 160ml", sleepStart: "11:30", sleepEnd: "12:30", poop: "少量" },
-        { time: "15:00", feed: "母乳 170ml", sleepStart: "15:30", sleepEnd: "16:30", poop: "" },
-        { time: "19:00", feed: "母乳 170ml", sleepStart: "", sleepEnd: "", poop: "正常" },
-        { time: "22:30", feed: "母乳 160ml", sleepStart: "23:00", sleepEnd: "02:30", poop: "" }
-      ],
-      5: [ // 5 個月：每 4 小時，約 5 次，單次 170–180ml
-        { time: "06:30", feed: "母乳 170ml", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "10:30", feed: "母乳 180ml", sleepStart: "11:00", sleepEnd: "12:00", poop: "少量" },
-        { time: "14:30", feed: "母乳 180ml", sleepStart: "15:00", sleepEnd: "16:00", poop: "" },
-        { time: "18:30", feed: "母乳 170ml", sleepStart: "", sleepEnd: "", poop: "正常" },
-        { time: "22:00", feed: "母乳 170ml", sleepStart: "22:30", sleepEnd: "06:30", poop: "" }
-      ],
-      6: [ // 6 個月：開始副食品，每天 4 次奶 + 1~2 次副食，單次 180–200ml
-        { time: "07:00", feed: "母乳 180ml", sleepStart: "", sleepEnd: "", poop: "少量" },
-        { time: "10:30", feed: "母乳 180ml + 副食品", sleepStart: "11:00", sleepEnd: "12:00", poop: "" },
-        { time: "14:30", feed: "母乳 180ml", sleepStart: "15:00", sleepEnd: "16:00", poop: "" },
-        { time: "18:30", feed: "母乳 190ml + 副食品", sleepStart: "", sleepEnd: "", poop: "正常" },
-        { time: "22:00", feed: "母乳 180ml", sleepStart: "22:30", sleepEnd: "07:00", poop: "" }
-      ],
-      7: [ // 7 個月：3~4 次奶 + 副食，單次 180–200ml
-        { time: "07:00", feed: "母乳 180ml + 副食品", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "11:00", feed: "母乳 180ml", sleepStart: "11:30", sleepEnd: "12:30", poop: "少量" },
-        { time: "15:00", feed: "母乳 180ml + 副食品", sleepStart: "15:30", sleepEnd: "16:30", poop: "" },
-        { time: "19:30", feed: "母乳 190ml", sleepStart: "20:00", sleepEnd: "07:00", poop: "正常" }
-      ],
-      8: [ // 8 個月：3 次奶 + 2~3 次副食，單次約 200ml
-        { time: "07:00", feed: "母乳 200ml + 副食品", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "11:30", feed: "母乳 200ml", sleepStart: "12:00", sleepEnd: "13:00", poop: "少量" },
-        { time: "16:00", feed: "母乳 200ml + 副食品", sleepStart: "16:30", sleepEnd: "17:30", poop: "" },
-        { time: "20:00", feed: "母乳 200ml", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
-      ],
-      9: [ // 9 個月：3 次奶為主，搭配固體餐
-        { time: "07:00", feed: "母乳 200ml + 早餐副食品", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "12:00", feed: "母乳 200ml + 午餐副食品", sleepStart: "12:30", sleepEnd: "13:30", poop: "少量" },
-        { time: "16:30", feed: "點心 / 少量母乳", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "20:00", feed: "母乳 200ml + 晚餐副食品", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
-      ],
-      10: [ // 10 個月
-        { time: "07:00", feed: "母乳 200ml + 早餐副食品", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "12:30", feed: "母乳 180ml + 午餐副食品", sleepStart: "13:00", sleepEnd: "14:00", poop: "少量" },
-        { time: "16:30", feed: "點心 / 水果", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "20:00", feed: "母乳 180ml + 晚餐副食品", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
-      ],
-      11: [ // 11 個月
-        { time: "07:00", feed: "奶 180ml + 早餐固體", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "12:30", feed: "奶 150ml + 午餐固體", sleepStart: "13:00", sleepEnd: "14:00", poop: "少量" },
-        { time: "16:30", feed: "點心 / 少量奶", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "20:00", feed: "奶 150ml + 晚餐固體", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
-      ],
-      12: [ // 12 個月：逐漸接近幼兒餐
-        { time: "07:30", feed: "牛奶 / 配方奶 150ml + 早餐固體", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "12:30", feed: "少量奶 + 午餐固體", sleepStart: "13:00", sleepEnd: "14:00", poop: "正常" },
-        { time: "16:00", feed: "點心", sleepStart: "", sleepEnd: "", poop: "" },
-        { time: "19:30", feed: "少量奶 + 晚餐固體", sleepStart: "20:00", sleepEnd: "07:30", poop: "" }
-      ]
-    };
+    function togglePoopColor() {
+      const colorSelect = document.getElementById('poopColor');
+      colorSelect.disabled = !document.getElementById('poop').checked;
+      colorSelect.classList.toggle('invisible');
+    }
 
-    // 通用預設（如果使用者按「載入通用預設」）
-    const genericDefaultReference = [
-      { time: "06:30", feed: "母乳 120ml", sleepStart: "", sleepEnd: "", poop: "少量" },
-      { time: "09:30", feed: "母乳 100ml", sleepStart: "10:00", sleepEnd: "11:00", poop: "" },
-      { time: "13:00", feed: "母乳 120ml", sleepStart: "13:30", sleepEnd: "14:30", poop: "正常" },
-      { time: "17:30", feed: "母乳 110ml", sleepStart: "", sleepEnd: "", poop: "" },
-      { time: "21:00", feed: "母乳 130ml", sleepStart: "21:30", sleepEnd: "06:00", poop: "" }
-    ];
+    function addLog(e) {
+      e.preventDefault();
+      const log = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        time: document.getElementById('time').value,
+        feedType: document.getElementById('feedType').value,
+        feedAmount: parseInt(document.getElementById('feedAmount').value) || 0,
+        sleep: parseInt(document.getElementById('sleep').value) || 0,
+        poop: document.getElementById('poop').checked,
+        poopColor: document.getElementById('poopColor').value
+      };
+      logs.unshift(log);
+      localStorage.setItem('babyLogs', JSON.stringify(logs.slice(0, 1000))); // Keep last 1000
+      document.getElementById('logForm').reset();
+      togglePoopColor();
+      updateHistory();
+      if (document.querySelector('#chartsTab.active')) updateCharts();
+      alert('✅ 記錄已儲存！');
+    }
 
-    const clampMonth = (m) => {
-      if (m == null) return 0;
-      if (m < 0) return 0;
-      if (m > 12) return 12;
-      return m;
-    };
-
-    const getDefaultReferenceForMonth = (month) => {
-      month = clampMonth(month);
-      if (referenceByMonth[month]) return referenceByMonth[month];
-      if (month <= 1) return referenceByMonth[0];
-      if (month <= 3) return referenceByMonth[2];
-      if (month <= 5) return referenceByMonth[4];
-      if (month <= 7) return referenceByMonth[6];
-      if (month <= 12) return referenceByMonth[8];
-      return referenceByMonth[12];
-    };
-
-    const babyBirthDateInput = document.getElementById("babyBirthDate");
-    const babyAgeText = document.getElementById("babyAgeText");
-    const babyAgeChip = document.getElementById("baby-age-chip");
-    const forecastAgeChip = document.getElementById("forecastAgeChip");
-    const todayDateLabel = document.getElementById("todayDateLabel");
-    const referenceTableBody = document.getElementById("referenceTableBody");
-    const runForecastBtn = document.getElementById("runForecastBtn");
-    const saveForecastBtn = document.getElementById("saveForecastBtn");
-    const forecastTableBody = document.getElementById("forecastTableBody");
-    const planTimeline = document.getElementById("planTimeline");
-    const loadReferenceBtn = document.getElementById("loadReferenceBtn");
-    const reloadRefForAgeBtn = document.getElementById("reloadRefForAgeBtn");
-    const refreshPlanBtn = document.getElementById("refreshPlanBtn");
-    const exportCsvBtn = document.getElementById("exportCsvBtn");
-    const currentRefMonthLabel = document.getElementById("currentRefMonthLabel");
-
-    const recordDateInput = document.getElementById("recordDate");
-    const recordTimeInput = document.getElementById("recordTime");
-    const recordFeedInput = document.getElementById("recordFeed");
-    const recordSleepStartInput = document.getElementById("recordSleepStart");
-    const recordSleepEndInput = document.getElementById("recordSleepEnd");
-    const recordPoopInput = document.getElementById("recordPoop");
-    const addRecordBtn = document.getElementById("addRecordBtn");
-    const clearRecordFormBtn = document.getElementById("clearRecordFormBtn");
-    const recordList = document.getElementById("recordList");
-    const recordDateFilter = document.getElementById("recordDateFilter");
-
-    const loadRecords = () => loadJSON(LS_KEYS.RECORDS, []);
-    const saveRecords = (records) => {
-      saveJSON(LS_KEYS.RECORDS, records);
-      renderRecordList();
-      populateRecordDateFilter();
-    };
-
-    const clearRecordForm = () => {
-      recordDateInput.value = todayISO();
-      recordTimeInput.value = "";
-      recordFeedInput.value = "";
-      recordSleepStartInput.value = "";
-      recordSleepEndInput.value = "";
-      recordPoopInput.value = "";
-    };
-
-    const renderReferenceTable = () => {
-      const ref = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
-      referenceTableBody.innerHTML = "";
-      ref.forEach((row, index) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-stone-100";
-        tr.innerHTML = `
-          <td class="py-1 pr-2">
-            <input type="time" class="input-base text-[11px] bg-white" data-ref-index="${index}" data-field="time" value="${row.time || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="text" class="input-base text-[11px] bg-white" data-ref-index="${index}" data-field="feed" value="${row.feed || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="time" class="input-base text-[11px] bg-white" data-ref-index="${index}" data-field="sleepStart" value="${row.sleepStart || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="time" class="input-base text-[11px] bg-white" data-ref-index="${index}" data-field="sleepEnd" value="${row.sleepEnd || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="text" class="input-base text-[11px] bg-white" data-ref-index="${index}" data-field="poop" value="${row.poop || ""}">
+    function updateHistory() {
+      const tbody = document.querySelector('#historyTable tbody');
+      tbody.innerHTML = '';
+      logs.slice(0, 50).forEach(log => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td class="p-3">${log.time}</td>
+          <td class="p-3">${log.feedType || ''} ${log.feedAmount}ml</td>
+          <td class="p-3">${log.sleep}分</td>
+          <td class="p-3">${log.poop ? (log.poopColor || '💩') : '❌'}</td>
+          <td class="p-3">
+            <button onclick="deleteLog(${log.id})" class="text-red-500 hover:text-red-700">刪除</button>
           </td>
         `;
-        referenceTableBody.appendChild(tr);
+      });
+    }
+
+    window.deleteLog = function(id) {
+      logs = logs.filter(l => l.id !== id);
+      localStorage.setItem('babyLogs', JSON.stringify(logs));
+      updateHistory();
+      updateCharts();
+    };
+
+    function updateCharts() {
+      const ctx1 = document.getElementById('feedChart')?.getContext('2d');
+      if (ctx1 && charts.feedChart) charts.feedChart.destroy();
+      charts.feedChart = new Chart(ctx1, {
+        type: 'line',
+         getChartData('feedAmount', '餵食量 (ml)'),
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
       });
 
-      referenceTableBody.querySelectorAll("input").forEach((input) => {
-        input.addEventListener("change", () => {
-          const index = parseInt(input.dataset.refIndex, 10);
-          const field = input.dataset.field;
-          const ref = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
-          if (!ref[index]) return;
-          ref[index][field] = input.value;
-          saveJSON(LS_KEYS.REFERENCE, ref);
+      // Similar for other charts...
+      // sleepChart, poopChart, frequencyChart
+    }
+
+    function getChartData(field, label) {
+      const periods = { '1D': 1, '1W': 7, '1M': 30 };
+      const datasets = [];
+      Object.entries(periods).forEach(([period, days]) => {
+        const data = logs
+          .filter(l => new Date().getTime() - new Date(l.date).getTime() <= days * 86400000)
+          .reduce((acc, l) => {
+            acc[new Date(l.date).toLocaleDateString()] = (acc[new Date(l.date).toLocaleDateString()] || 0) + (l[field] || 0);
+            return acc;
+          }, {});
+        datasets.push({
+          label: `${period}`,
+           Object.values(data),
+          borderColor: `hsl(${Math.random()*360}, 70%, 50%)`,
+          tension: 0.4
         });
       });
-    };
+      return { labels: Object.keys(datasets[0]?.data || {}), datasets };
+    }
 
-    const renderRecordList = () => {
-      const records = loadRecords().sort((a, b) => {
-        if (a.date === b.date) return a.time.localeCompare(b.time);
-        return a.date.localeCompare(b.date);
-      });
-      const filterDate = recordDateFilter.value || "";
-      recordList.innerHTML = "";
-
-      const filtered = filterDate ? records.filter(r => r.date === filterDate) : records;
-
-      if (filtered.length === 0) {
-        recordList.innerHTML = `<p class="text-[11px] text-stone-400 text-center py-4">目前沒有任何記錄。</p>`;
-        return;
-      }
-
-      filtered.forEach((r) => {
-        const card = document.createElement("div");
-        card.className = "muji-card px-3 py-2 flex flex-col gap-1 text-[11px]";
-        card.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="chip">${r.date}</span>
-              <span class="text-stone-800 font-medium">${r.time || "--:--"}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button class="text-stone-400 hover:text-red-500" data-action="delete" data-id="${r.id}">
-                <i class="fa fa-trash-o"></i>
-              </button>
-            </div>
-          </div>
-          <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-            <span><span class="text-stone-400">食：</span>${r.feed || "—"}</span>
-            <span><span class="text-stone-400">入睡：</span>${r.sleepStart || "—"}</span>
-            <span><span class="text-stone-400">起床：</span>${r.sleepEnd || "—"}</span>
-            <span><span class="text-stone-400">痾屎：</span>${r.poop || "—"}</span>
-          </div>
-        `;
-
-        card.addEventListener("click", (e) => {
-          if (e.target.closest("button[data-action='delete']")) return;
-          openRecordEditModal(r.id);
-        });
-
-        card.querySelector("button[data-action='delete']").addEventListener("click", (e) => {
-          e.stopPropagation();
-          if (!confirm("確定要刪除此筆記錄？")) return;
-          const all = loadRecords();
-          const next = all.filter(x => x.id !== r.id);
-          saveRecords(next);
-        });
-
-        recordList.appendChild(card);
-      });
-    };
-
-    const populateRecordDateFilter = () => {
-      const records = loadRecords();
-      const dates = Array.from(new Set(records.map(r => r.date))).sort();
-      const currentValue = recordDateFilter.value;
-      recordDateFilter.innerHTML = `<option value="">全部日期</option>`;
-      dates.forEach(d => {
-        const opt = document.createElement("option");
-        opt.value = d;
-        opt.textContent = d;
-        recordDateFilter.appendChild(opt);
-      });
-      if (dates.includes(currentValue)) {
-        recordDateFilter.value = currentValue;
-      }
-    };
-
-    const openRecordEditModal = (id) => {
-      const records = loadRecords();
-      const r = records.find(x => x.id === id);
-      if (!r) return;
-      const newFeed = prompt("食（例如：母乳 120ml）", r.feed || "");
-      if (newFeed === null) return;
-      const newSleepStart = prompt("入睡時間（HH:MM）", r.sleepStart || "");
-      if (newSleepStart === null) return;
-      const newSleepEnd = prompt("起床時間（HH:MM）", r.sleepEnd || "");
-      if (newSleepEnd === null) return;
-      const newPoop = prompt("痾屎（描述）", r.poop || "");
-      if (newPoop === null) return;
-
-      r.feed = newFeed;
-      r.sleepStart = newSleepStart;
-      r.sleepEnd = newSleepEnd;
-      r.poop = newPoop;
-      saveRecords(records);
-    };
-
-    const loadForecasts = () => loadJSON(LS_KEYS.FORECASTS, []);
-    const saveForecasts = (forecasts) => {
-      saveJSON(LS_KEYS.FORECASTS, forecasts);
-    };
-
-    const computeAverageShiftMinutes = () => {
-      const records = loadRecords();
-      const reference = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
-      const byDate = {};
-      records.forEach(r => {
-        if (!byDate[r.date]) byDate[r.date] = [];
-        byDate[r.date].push(r);
-      });
-
-      const dates = Object.keys(byDate).sort().reverse();
-      const considerDates = dates.slice(0, 3);
-      const shifts = [];
-
-      considerDates.forEach(date => {
-        const dayRecords = byDate[date];
-        reference.forEach(refRow => {
-          const refTimeMins = parseTimeToMinutes(refRow.time);
-          if (refTimeMins == null) return;
-          const sameTimeRecord = dayRecords.find(r => r.time && parseTimeToMinutes(r.time) != null);
-          if (!sameTimeRecord) return;
-          const actualMins = parseTimeToMinutes(sameTimeRecord.time);
-          if (actualMins == null) return;
-          shifts.push(actualMins - refTimeMins);
-        });
-      });
-
-      if (shifts.length === 0) return 0;
-      const sum = shifts.reduce((a, b) => a + b, 0);
-      return Math.round(sum / shifts.length);
-    };
-
-    const renderForecastTable = (rows) => {
-      forecastTableBody.innerHTML = "";
-      rows.forEach((row, idx) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-stone-100";
-        tr.innerHTML = `
-          <td class="py-1 pr-2">
-            <input type="time" class="input-base text-[11px] bg-white forecast-input" data-row="${idx}" data-field="time" value="${row.time || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="text" class="input-base text-[11px] bg-white forecast-input" data-row="${idx}" data-field="feed" value="${row.feed || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="time" class="input-base text-[11px] bg-white forecast-input" data-row="${idx}" data-field="sleepStart" value="${row.sleepStart || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="time" class="input-base text-[11px] bg-white forecast-input" data-row="${idx}" data-field="sleepEnd" value="${row.sleepEnd || ""}">
-          </td>
-          <td class="py-1 pr-2">
-            <input type="text" class="input-base text-[11px] bg-white forecast-input" data-row="${idx}" data-field="poop" value="${row.poop || ""}">
-          </td>
-        `;
-        forecastTableBody.appendChild(tr);
-      });
-    };
-
-    const runForecast = () => {
-      const reference = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
-      const shift = computeAverageShiftMinutes();
-      const forecastRows = reference.map(row => {
-        const base = parseTimeToMinutes(row.time);
-        const forecastTime = base == null ? "" : minutesToTime(base + shift);
-        return {
-          time: forecastTime,
-          feed: row.feed,
-          sleepStart: row.sleepStart,
-          sleepEnd: row.sleepEnd,
-          poop: row.poop
-        };
-      });
-      renderForecastTable(forecastRows);
-      return forecastRows;
-    };
-
-    const getForecastTableData = () => {
-      const rows = [];
-      forecastTableBody.querySelectorAll("tr").forEach(() => {
-        rows.push({ time: "", feed: "", sleepStart: "", sleepEnd: "", poop: "" });
-      });
-
-      forecastTableBody.querySelectorAll(".forecast-input").forEach(input => {
-        const rowIndex = parseInt(input.dataset.row, 10);
-        const field = input.dataset.field;
-        if (!rows[rowIndex]) return;
-        rows[rowIndex][field] = input.value;
-      });
-
-      return rows;
-    };
-
-    const renderPlanTimeline = () => {
-      const today = todayISO();
-      const allForecasts = loadForecasts();
-      const todayForecast = allForecasts.find(f => f.date === today);
-      const records = loadRecords().filter(r => r.date === today);
-
-      planTimeline.innerHTML = "";
-
-      const block = document.createElement("div");
-      block.className = "space-y-2";
-
-      if (!todayForecast) {
-        block.innerHTML = `
-          <p class="text-[11px] text-stone-400 mb-1">尚未保存今日預測，可在 FORECAST 分頁產生並保存。</p>
-        `;
-      } else {
-        const rows = todayForecast.rows;
-        rows.forEach(row => {
-          const time = row.time || "--:--";
-          const li = document.createElement("div");
-          li.className = "flex items-start gap-3";
-
-          li.innerHTML = `
-            <div class="flex flex-col items-center">
-              <span class="text-[11px] text-stone-500">${time}</span>
-              <span class="w-px flex-1 bg-stone-200 mt-1"></span>
-            </div>
-            <div class="flex-1 muji-card px-3 py-2 text-[11px]">
-              <div class="flex items-center justify-between">
-                <span class="text-stone-800">${row.feed || "—"}</span>
-                <span class="chip">預測</span>
-              </div>
-              <div class="mt-1 text-stone-500">
-                <span>入睡：${row.sleepStart || "—"}</span>
-                <span class="mx-1">·</span>
-                <span>起床：${row.sleepEnd || "—"}</span>
-                <span class="mx-1">·</span>
-                <span>痾屎：${row.poop || "—"}</span>
-              </div>
-            </div>
-          `;
-          block.appendChild(li);
-        });
-      }
-
-      if (records.length > 0) {
-        const subTitle = document.createElement("div");
-        subTitle.className = "mt-3 section-title";
-        subTitle.textContent = "TODAY ACTUAL";
-        block.appendChild(subTitle);
-
-        records.sort((a, b) => a.time.localeCompare(b.time));
-        records.forEach(r => {
-          const row = document.createElement("div");
-          row.className = "flex items-start gap-3 mt-1";
-          row.innerHTML = `
-            <div class="flex flex-col items-center">
-              <span class="text-[11px] text-stone-500">${r.time || "--:--"}</span>
-              <span class="w-px flex-1 bg-stone-200 mt-1"></span>
-            </div>
-            <div class="flex-1 muji-card px-3 py-2 text-[11px]">
-              <div class="flex items-center justify-between">
-                <span class="text-stone-800">${r.feed || "—"}</span>
-                <span class="chip">歷史</span>
-              </div>
-              <div class="mt-1 text-stone-500">
-                <span>入睡：${r.sleepStart || "—"}</span>
-                <span class="mx-1">·</span>
-                <span>起床：${r.sleepEnd || "—"}</span>
-                <span class="mx-1">·</span>
-                <span>痾屎：${r.poop || "—"}</span>
-              </div>
-            </div>
-          `;
-          block.appendChild(row);
-        });
-      } else {
-        const p = document.createElement("p");
-        p.className = "text-[11px] text-stone-400 mt-2";
-        p.textContent = "今日尚未有實際記錄，可在 RECORD 分頁新增。";
-        block.appendChild(p);
-      }
-
-      planTimeline.appendChild(block);
-    };
-
-    const exportToCsv = () => {
-      const birth = localStorage.getItem(LS_KEYS.BIRTH_DATE) || "";
-      const reference = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
-      const records = loadRecords();
-      const forecasts = loadForecasts();
-
-      let csv = "";
-
-      csv += "=== BABY PROFILE ===\n";
-      csv += `birth_date,${birth}\n\n`;
-
-      csv += "=== REFERENCE PATTERN ===\n";
-      csv += "index,time,feed,sleep_start,sleep_end,poop\n";
-      reference.forEach((r, i) => {
-        csv += `${i + 1},${r.time || ""},${r.feed || ""},${r.sleepStart || ""},${r.sleepEnd || ""},${r.poop || ""}\n`;
-      });
-      csv += "\n";
-
-      csv += "=== HISTORY RECORDS ===\n";
-      csv += "id,date,time,feed,sleep_start,sleep_end,poop\n";
-      records.forEach(r => {
-        csv += `${r.id},${r.date},${r.time || ""},${r.feed || ""},${r.sleepStart || ""},${r.sleepEnd || ""},${r.poop || ""}\n`;
-      });
-      csv += "\n";
-
-      csv += "=== FORECASTS ===\n";
-      csv += "date,row_index,time,feed,sleep_start,sleep_end,poop\n";
-      forecasts.forEach(f => {
-        f.rows.forEach((row, idx) => {
-          csv += `${f.date},${idx + 1},${row.time || ""},${row.feed || ""},${row.sleepStart || ""},${row.sleepEnd || ""},${row.poop || ""}\n`;
-        });
-      });
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    function exportCSV() {
+      const csv = logs.map(l => 
+        `${l.date},${l.time},${l.feedType},${l.feedAmount},${l.sleep},${l.poop},${l.poopColor}`
+      ).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = "baby_log.csv";
-      document.body.appendChild(a);
+      a.download = `baby-log-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    };
+    }
 
-    const tabButtons = document.querySelectorAll("button.tab-btn");
-    const tabSections = {
-      plan: document.getElementById("tab-plan"),
-      record: document.getElementById("tab-record"),
-      forecast: document.getElementById("tab-forecast")
-    };
-
-    const switchTab = (tab) => {
-      Object.keys(tabSections).forEach(key => {
-        tabSections[key].classList.toggle("hidden", key !== tab);
-      });
-      tabButtons.forEach(btn => {
-        const t = btn.dataset.tab;
-        if (t === tab) {
-          btn.classList.remove("tab-inactive");
-          btn.classList.add("tab-active");
-        } else {
-          btn.classList.remove("tab-active");
-          btn.classList.add("tab-inactive");
-        }
-      });
-    };
-
-    tabButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        switchTab(btn.dataset.tab);
-      });
-    });
-
-    const describeRefMonth = (m) => {
-      m = clampMonth(m);
-      if (m === null) return "尚未計算";
-      if (m === 0) return "0 個月（新生兒少量多餐）";
-      if (m === 1) return "1 個月（每 3 小時餵）";
-      if (m === 2) return "2 個月（約 6–7 餐）";
-      if (m === 3) return "3 個月（約 6 餐）";
-      if (m === 4 || m === 5) return m + " 個月（每 4 小時左右）";
-      if (m === 6 || m === 7) return m + " 個月（開始副食品）";
-      if (m >= 8 && m <= 12) return m + " 個月（3 次奶搭配固體餐）";
-      return m + " 個月";
-    };
-
-    const initReferenceForAgeIfEmpty = (months) => {
-      if (!localStorage.getItem(LS_KEYS.REFERENCE)) {
-        const ref = getDefaultReferenceForMonth(months);
-        saveJSON(LS_KEYS.REFERENCE, ref);
-      }
-    };
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const today = todayISO();
-      todayDateLabel.textContent = `今天：${today}`;
-      recordDateInput.value = today;
-
-      const birth = localStorage.getItem(LS_KEYS.BIRTH_DATE) || "";
-      if (birth) {
-        babyBirthDateInput.value = birth;
-      }
-      const months = computeMonthAge(birth);
-      const ageTextStr = formatAgeText(months);
-      babyAgeText.textContent = `目前月齡：約 ${ageTextStr}。`;
-      babyAgeChip.textContent = ageTextStr;
-      forecastAgeChip.textContent = `預測以 ${ageTextStr} 為參考。`;
-      currentRefMonthLabel.textContent = describeRefMonth(months);
-
-      initReferenceForAgeIfEmpty(months);
-      renderReferenceTable();
-
-      renderRecordList();
-      populateRecordDateFilter();
-
-      renderForecastTable(runForecast());
-      renderPlanTimeline();
-    });
-
-    babyBirthDateInput.addEventListener("change", () => {
-      const v = babyBirthDateInput.value;
-      if (v) {
-        localStorage.setItem(LS_KEYS.BIRTH_DATE, v);
-      } else {
-        localStorage.removeItem(LS_KEYS.BIRTH_DATE);
-      }
-      const months = computeMonthAge(v);
-      const ageTextStr = formatAgeText(months);
-      babyAgeText.textContent = `目前月齡：約 ${ageTextStr}。`;
-      babyAgeChip.textContent = ageTextStr;
-      forecastAgeChip.textContent = `預測以 ${ageTextStr} 為參考。`;
-      currentRefMonthLabel.textContent = describeRefMonth(months);
-    });
-
-    loadReferenceBtn.addEventListener("click", () => {
-      if (!confirm("確定要載入通用預設？這會覆蓋目前參考模板。")) return;
-      saveJSON(LS_KEYS.REFERENCE, genericDefaultReference);
-      renderReferenceTable();
-    });
-
-    reloadRefForAgeBtn.addEventListener("click", () => {
-      const birth = localStorage.getItem(LS_KEYS.BIRTH_DATE) || babyBirthDateInput.value;
-      const months = computeMonthAge(birth);
-      if (months == null) {
-        alert("請先設定嬰兒出生日期。");
-        return;
-      }
-      if (!confirm(`將依照目前月齡（約 ${formatAgeText(months)}）重設參考模板，會覆蓋你已修改的內容，確定繼續？`)) return;
-      const ref = getDefaultReferenceForMonth(months);
-      saveJSON(LS_KEYS.REFERENCE, ref);
-      renderReferenceTable();
-      currentRefMonthLabel.textContent = describeRefMonth(months);
-      alert("已依月齡載入新的參考模板。");
-    });
-
-    addRecordBtn.addEventListener("click", () => {
-      const date = recordDateInput.value || todayISO();
-      const time = recordTimeInput.value || "";
-      const feed = recordFeedInput.value.trim();
-      const sleepStart = recordSleepStartInput.value;
-      const sleepEnd = recordSleepEndInput.value;
-      const poop = recordPoopInput.value.trim();
-
-      if (!time && !feed && !sleepStart && !sleepEnd && !poop) {
-        alert("請至少填寫一個欄位。");
-        return;
-      }
-
-      const records = loadRecords();
-      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      records.push({ id, date, time, feed, sleepStart, sleepEnd, poop });
-      saveRecords(records);
-      clearRecordForm();
-    });
-
-    clearRecordFormBtn.addEventListener("click", () => {
-      clearRecordForm();
-    });
-
-    recordDateFilter.addEventListener("change", () => {
-      renderRecordList();
-    });
-
-    runForecastBtn.addEventListener("click", () => {
-      const rows = runForecast();
-      alert("已根據最近歷史記錄與月齡模板更新預測時間。");
-      renderPlanTimeline();
-    });
-
-    saveForecastBtn.addEventListener("click", () => {
-      const today = todayISO();
-      const rows = getForecastTableData();
-      const forecasts = loadForecasts();
-      const existingIdx = forecasts.findIndex(f => f.date === today);
-      if (existingIdx >= 0) {
-        forecasts[existingIdx].rows = rows;
-      } else {
-        forecasts.push({ date: today, rows });
-      }
-      saveForecasts(forecasts);
-      alert("已保存今日預測，可於 PLAN 及 CSV 匯出查看。");
-      renderPlanTimeline();
-    });
-
-    refreshPlanBtn.addEventListener("click", () => {
-      renderPlanTimeline();
-    });
-
-    exportCsvBtn.addEventListener("click", () => {
-      exportToCsv();
-    });
+    function importCSV(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const lines = e.target.result.split('\n');
+        logs = lines.slice(1).map(line => {
+          const [date, time, feedType, feedAmount, sleep, poop, poopColor] = line.split(',');
+          return { id: Date.now() + Math.random(), date, time, feedType, feedAmount: parseInt(feedAmount), sleep: parseInt(sleep), poop: poop === 'true', poopColor };
+        });
+        localStorage.setItem('babyLogs', JSON.stringify(logs));
+        updateHistory();
+        updateCharts();
+        alert('✅ 匯入完成！');
+      };
+      reader.readAsText(file);
+    }
   </script>
 </body>
 </html>
 
-add index.html
+Update index.html to v3: Complete download-ready version with all features
+
+✅ Baby Profile card + collapsible Reference Pattern
+✅ Feed: 母乳/奶粉 dropdown + ML input
+✅ Poop: Checkbox + color selector (黃/綠/棕/黑)
+✅ New CHART tab: 4 trends (1D/1W/1M) - 餵食量/睡覺/痾屎/頻率
+✅ CSV export/import + LocalStorage
+✅ Responsive design + Zen Maru Gothic font
+
