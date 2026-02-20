@@ -2,17 +2,17 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>嬰兒食瞓痾小助手</title>
+  <title>嬰兒食瞓痾小助手 · 月齡版</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Google Fonts 日系無印極簡風：Noto Sans JP + Zen Maru Gothic [web:7][web:10] -->
   <link rel="preconnect" href="https://fonts.googleapis.com" /> <!-- [web:7] -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /> <!-- [web:7] -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@300;400;500&display=swap" rel="stylesheet" /> <!-- [web:7][web:10] -->
 
-  <!-- Tailwind CSS Play CDN (適合單檔原型 / 小工具) [web:1][web:2][web:5] -->
+  <!-- Tailwind CSS Play CDN [web:1][web:2] -->
   <script src="https://cdn.tailwindcss.com"></script> <!-- [web:1] -->
 
-  <!-- Font Awesome CDN [web:6][web:9][web:15] -->
+  <!-- Font Awesome CDN [web:6][web:9] -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" /> <!-- [web:6] -->
 
   <!-- Tailwind 自訂主題 (無印極簡色系) -->
@@ -54,28 +54,17 @@
   </style>
 
   <style>
-    /* Zen Maru Gothic 專用 class，部分字用較柔和字型 */
     .zen-rounded {
       font-family: "Zen Maru Gothic", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    /* 手機優先：限制寬度、置中 */
     body {
       max-width: 480px;
       margin: 0 auto;
     }
-
-    /* 簡單滾動隱藏捲軸效果 */
-    .scroll-snap-x {
-      scroll-snap-type: x mandatory;
-    }
-    .scroll-snap-item {
-      scroll-snap-align: start;
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
-  <!-- App Shell -->
   <div class="flex-1 flex flex-col">
     <!-- Header -->
     <header class="px-4 pt-4 pb-2 bg-stone-100">
@@ -83,7 +72,7 @@
         <div>
           <div class="section-title">BABY LOG</div>
           <h1 class="zen-rounded text-2xl font-medium mt-1">食 · 瞓 · 痾 小助手</h1>
-          <p class="text-[11px] text-stone-500 mt-1">依照同月齡與歴史記錄，溫柔預測下一次食瞓痾時間。</p>
+          <p class="text-[11px] text-stone-500 mt-1">依照月齡參考模板與歴史記錄，預測下一次食瞓痾時間。</p>
         </div>
         <div class="flex flex-col items-end text-right">
           <span class="chip mb-1" id="baby-age-chip">尚未設定生日</span>
@@ -120,7 +109,7 @@
         <div class="flex items-center justify-between">
           <div>
             <div class="section-title">BABY PROFILE</div>
-            <p class="text-xs text-stone-500 mt-1">設定生日與參考作息模板，方便預測。</p>
+            <p class="text-xs text-stone-500 mt-1">設定生日，系統會依照月齡載入對應的參考作息。</p>
           </div>
           <i class="fa fa-leaf text-stone-300 text-2xl"></i>
         </div>
@@ -128,18 +117,30 @@
         <div class="space-y-2">
           <label class="block text-[11px] text-stone-500 mb-1">嬰兒出生日期</label>
           <input id="babyBirthDate" type="date" class="input-base text-xs" />
-          <p class="text-[11px] text-stone-500 mt-1" id="babyAgeText">會依照月齡自動計算參考與歴史差異。</p>
+          <p class="text-[11px] text-stone-500 mt-1" id="babyAgeText">會依照月齡載入 0–12 個月的預設參考模板。</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <div>
+            <span class="text-[11px] text-stone-500">目前月齡對應模板</span>
+            <div id="currentRefMonthLabel" class="text-xs text-stone-800 mt-0.5">尚未計算</div>
+          </div>
+          <div class="text-right">
+            <button id="reloadRefForAgeBtn" class="muji-btn-outline text-[11px]">
+              以月齡重設模板
+            </button>
+          </div>
         </div>
 
         <div class="border-t border-dashed border-stone-200 pt-3">
           <div class="flex items-center justify-between mb-2">
             <span class="section-title">REFERENCE PATTERN</span>
             <button id="loadReferenceBtn" class="muji-btn-outline text-[11px] flex items-center gap-1">
-              <i class="fa fa-refresh"></i><span>載入預設範例</span>
+              <i class="fa fa-refresh"></i><span>載入通用預設</span>
             </button>
           </div>
           <p class="text-[11px] text-stone-500 mb-2">
-            參考嬰兒食瞓痾記錄（單日樣板）：可直接使用或自行修改。
+            參考嬰兒食瞓痾記錄（單日樣板）：會根據月齡選擇餵食次數與大約奶量，你仍可自行微調。
           </p>
 
           <!-- 參考作息表 -->
@@ -155,12 +156,11 @@
                 </tr>
               </thead>
               <tbody id="referenceTableBody">
-                <!-- JS 產生 5 筆預設資料，可編輯 -->
               </tbody>
             </table>
           </div>
           <p class="text-[10px] text-stone-400 mt-1">
-            可視為「理想作息」，預測時會與歷史實際差異比較。
+            範例奶量與間隔依各月齡建議範圍「自創」設計，用作節奏參考，非醫療建議。[web:57][web:60]
           </p>
         </div>
       </section>
@@ -170,7 +170,7 @@
         <div class="muji-card p-4">
           <div class="section-title mb-1">TODAY · DAILY PLAN</div>
           <p class="text-xs text-stone-500 mb-3">
-            依據歷史與預測結果，以時間軸呈現今日食瞓痾節奏。
+            依據月齡參考模板與實際預測，以時間軸呈現今日食瞓痾節奏。
           </p>
 
           <div class="flex items-center justify-between mb-2">
@@ -180,16 +180,13 @@
             </button>
           </div>
 
-          <!-- 時間軸 -->
-          <div id="planTimeline" class="mt-2 space-y-3">
-            <!-- JS render from forecast + history -->
-          </div>
+          <div id="planTimeline" class="mt-2 space-y-3"></div>
         </div>
 
         <div class="muji-card p-4">
           <div class="section-title mb-1">TIPS</div>
           <p class="text-xs text-stone-500">
-            點選下方 RECORD/FORECAST，可即時更新今日計畫。若月齡變化大，可調整參考模板以貼近目前狀態。
+            若月齡改變，可在 BABY PROFILE 重新設定生日，再按「以月齡重設模板」，讓之後的預測更貼近目前狀態。
           </p>
         </div>
       </section>
@@ -201,13 +198,12 @@
             <div>
               <div class="section-title mb-1">RECORD HISTORY</div>
               <p class="text-xs text-stone-500">
-                歷史嬰兒食瞓痾記錄（可新增、修改），會永久保存在裝置 localStorage。
+                歷史嬰兒食瞓痾記錄（可新增、修改），永久保存在裝置 localStorage。
               </p>
             </div>
             <i class="fa fa-book text-stone-300 text-2xl"></i>
           </div>
 
-          <!-- 新增記錄表單 -->
           <div class="border-t border-dashed border-stone-200 pt-3 space-y-2">
             <div class="flex items-center justify-between mb-1">
               <span class="text-[11px] text-stone-500">新增一筆記錄</span>
@@ -257,7 +253,6 @@
           </div>
         </div>
 
-        <!-- 歷史列表 -->
         <div class="muji-card p-4 space-y-2">
           <div class="flex items-center justify-between mb-1">
             <span class="section-title">HISTORY LIST</span>
@@ -269,9 +264,7 @@
             點擊卡片可編輯內容；左右滑動可查看更多欄位。資料存於 localStorage，重整也不會消失。
           </p>
 
-          <div id="recordList" class="space-y-2 max-h-[320px] overflow-y-auto">
-            <!-- JS render -->
-          </div>
+          <div id="recordList" class="space-y-2 max-h-[320px] overflow-y-auto"></div>
         </div>
       </section>
 
@@ -282,7 +275,7 @@
             <div>
               <div class="section-title mb-1">TODAY FORECAST</div>
               <p class="text-xs text-stone-500">
-                根據同月齡參考模板與歷史記錄差異，預測今日食瞓痾時間。
+                根據當前月齡參考模板與歷史記錄差異，預測今日食瞓痾時間。
               </p>
             </div>
             <i class="fa fa-pagelines text-stone-300 text-2xl"></i>
@@ -296,7 +289,7 @@
           </div>
 
           <p class="text-[11px] text-stone-500 mt-2">
-            簡化邏輯：以最近 3 日實際與參考的時間差（分鐘）求平均，套用到今日參考模板上，產生預測時間。
+            簡化邏輯：以最近 3 日實際與「月齡專屬參考模板」的時間差（分鐘）求平均，套用到今日參考模板上。
           </p>
         </div>
 
@@ -322,9 +315,7 @@
                   <th class="py-1 pr-2">痾屎</th>
                 </tr>
               </thead>
-              <tbody id="forecastTableBody">
-                <!-- JS render -->
-              </tbody>
+              <tbody id="forecastTableBody"></tbody>
             </table>
           </div>
 
@@ -333,7 +324,7 @@
             <ul class="list-disc list-inside">
               <li>同一月齡的最近 3 日，取「實際 - 參考」時間差。</li>
               <li>取平均差異（分鐘），平移參考時間作為預測。</li>
-              <li>若歷史不足，則直接使用參考模板。</li>
+              <li>若歷史不足，則直接使用該月齡參考模板。</li>
             </ul>
           </div>
         </div>
@@ -362,7 +353,6 @@
   </div>
 
   <script>
-    // ========= LocalStorage Keys =========
     const LS_KEYS = {
       BIRTH_DATE: "baby_birth_date",
       REFERENCE: "baby_reference_pattern",
@@ -370,7 +360,6 @@
       FORECASTS: "baby_forecast_records"
     };
 
-    // ========= Helpers =========
     const todayISO = () => {
       const d = new Date();
       const y = d.getFullYear();
@@ -388,7 +377,7 @@
 
     const minutesToTime = (mins) => {
       if (mins == null) return "";
-      mins = ((mins % (24 * 60)) + (24 * 60)) % (24 * 60); // wrap around
+      mins = ((mins % (24 * 60)) + (24 * 60)) % (24 * 60);
       const h = String(Math.floor(mins / 60)).padStart(2, "0");
       const m = String(mins % 60).padStart(2, "0");
       return `${h}:${m}`;
@@ -427,7 +416,132 @@
       return `${y} 歲 ${m} 個月`;
     };
 
-    // ========= 初始化 UI =========
+    // ===== 月齡專屬參考模板（自創：依建議奶量與頻率設計，非醫療建議）[web:57][web:60] =====
+    // month: 0~12，單日 5~8 筆
+    const referenceByMonth = {
+      0: [ // 新生至未滿 1 個月：少量多餐（約 8 次）
+        { time: "02:00", feed: "母乳 60ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "05:00", feed: "母乳 60ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "08:00", feed: "母乳 70ml", sleepStart: "08:30", sleepEnd: "09:30", poop: "少量" },
+        { time: "11:00", feed: "母乳 70ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "14:00", feed: "母乳 70ml", sleepStart: "14:30", sleepEnd: "15:30", poop: "" },
+        { time: "17:00", feed: "母乳 70ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "20:00", feed: "母乳 80ml", sleepStart: "20:30", sleepEnd: "23:30", poop: "少量" },
+        { time: "23:30", feed: "母乳 60ml", sleepStart: "00:00", sleepEnd: "02:00", poop: "" }
+      ],
+      1: [ // 1 個月：每 3 小時左右，約 7~8 次，單次 80–100ml
+        { time: "01:30", feed: "母乳 80ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "04:30", feed: "母乳 80ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "07:30", feed: "母乳 90ml", sleepStart: "08:00", sleepEnd: "09:30", poop: "少量" },
+        { time: "10:30", feed: "母乳 90ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "13:30", feed: "母乳 90ml", sleepStart: "14:00", sleepEnd: "15:30", poop: "" },
+        { time: "16:30", feed: "母乳 90ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "19:30", feed: "母乳 100ml", sleepStart: "20:00", sleepEnd: "23:00", poop: "正常" },
+        { time: "23:00", feed: "母乳 80ml", sleepStart: "23:30", sleepEnd: "01:30", poop: "" }
+      ],
+      2: [ // 2 個月：每 3~4 小時，約 6~7 次，每次 120ml 左右
+        { time: "02:00", feed: "母乳 120ml", sleepStart: "02:30", sleepEnd: "05:30", poop: "" },
+        { time: "06:00", feed: "母乳 120ml", sleepStart: "", sleepEnd: "", poop: "少量" },
+        { time: "09:30", feed: "母乳 120ml", sleepStart: "10:00", sleepEnd: "11:00", poop: "" },
+        { time: "13:00", feed: "母乳 130ml", sleepStart: "13:30", sleepEnd: "14:30", poop: "正常" },
+        { time: "17:00", feed: "母乳 120ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "20:30", feed: "母乳 130ml", sleepStart: "21:00", sleepEnd: "02:00", poop: "" }
+      ],
+      3: [ // 3 個月：每 3.5~4 小時，約 6 次，單次 130–150ml
+        { time: "02:30", feed: "母乳 130ml", sleepStart: "03:00", sleepEnd: "06:30", poop: "" },
+        { time: "07:00", feed: "母乳 130ml", sleepStart: "", sleepEnd: "", poop: "少量" },
+        { time: "10:30", feed: "母乳 140ml", sleepStart: "11:00", sleepEnd: "12:00", poop: "" },
+        { time: "14:00", feed: "母乳 140ml", sleepStart: "14:30", sleepEnd: "15:30", poop: "" },
+        { time: "17:30", feed: "母乳 140ml", sleepStart: "", sleepEnd: "", poop: "正常" },
+        { time: "21:00", feed: "母乳 150ml", sleepStart: "21:30", sleepEnd: "02:30", poop: "" }
+      ],
+      4: [ // 4 個月：每 4 小時，約 5~6 次，單次 150–180ml
+        { time: "02:30", feed: "母乳 150ml", sleepStart: "03:00", sleepEnd: "06:30", poop: "" },
+        { time: "07:00", feed: "母乳 160ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "11:00", feed: "母乳 160ml", sleepStart: "11:30", sleepEnd: "12:30", poop: "少量" },
+        { time: "15:00", feed: "母乳 170ml", sleepStart: "15:30", sleepEnd: "16:30", poop: "" },
+        { time: "19:00", feed: "母乳 170ml", sleepStart: "", sleepEnd: "", poop: "正常" },
+        { time: "22:30", feed: "母乳 160ml", sleepStart: "23:00", sleepEnd: "02:30", poop: "" }
+      ],
+      5: [ // 5 個月：每 4 小時，約 5 次，單次 170–180ml
+        { time: "06:30", feed: "母乳 170ml", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "10:30", feed: "母乳 180ml", sleepStart: "11:00", sleepEnd: "12:00", poop: "少量" },
+        { time: "14:30", feed: "母乳 180ml", sleepStart: "15:00", sleepEnd: "16:00", poop: "" },
+        { time: "18:30", feed: "母乳 170ml", sleepStart: "", sleepEnd: "", poop: "正常" },
+        { time: "22:00", feed: "母乳 170ml", sleepStart: "22:30", sleepEnd: "06:30", poop: "" }
+      ],
+      6: [ // 6 個月：開始副食品，每天 4 次奶 + 1~2 次副食，單次 180–200ml
+        { time: "07:00", feed: "母乳 180ml", sleepStart: "", sleepEnd: "", poop: "少量" },
+        { time: "10:30", feed: "母乳 180ml + 副食品", sleepStart: "11:00", sleepEnd: "12:00", poop: "" },
+        { time: "14:30", feed: "母乳 180ml", sleepStart: "15:00", sleepEnd: "16:00", poop: "" },
+        { time: "18:30", feed: "母乳 190ml + 副食品", sleepStart: "", sleepEnd: "", poop: "正常" },
+        { time: "22:00", feed: "母乳 180ml", sleepStart: "22:30", sleepEnd: "07:00", poop: "" }
+      ],
+      7: [ // 7 個月：3~4 次奶 + 副食，單次 180–200ml
+        { time: "07:00", feed: "母乳 180ml + 副食品", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "11:00", feed: "母乳 180ml", sleepStart: "11:30", sleepEnd: "12:30", poop: "少量" },
+        { time: "15:00", feed: "母乳 180ml + 副食品", sleepStart: "15:30", sleepEnd: "16:30", poop: "" },
+        { time: "19:30", feed: "母乳 190ml", sleepStart: "20:00", sleepEnd: "07:00", poop: "正常" }
+      ],
+      8: [ // 8 個月：3 次奶 + 2~3 次副食，單次約 200ml
+        { time: "07:00", feed: "母乳 200ml + 副食品", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "11:30", feed: "母乳 200ml", sleepStart: "12:00", sleepEnd: "13:00", poop: "少量" },
+        { time: "16:00", feed: "母乳 200ml + 副食品", sleepStart: "16:30", sleepEnd: "17:30", poop: "" },
+        { time: "20:00", feed: "母乳 200ml", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
+      ],
+      9: [ // 9 個月：3 次奶為主，搭配固體餐
+        { time: "07:00", feed: "母乳 200ml + 早餐副食品", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "12:00", feed: "母乳 200ml + 午餐副食品", sleepStart: "12:30", sleepEnd: "13:30", poop: "少量" },
+        { time: "16:30", feed: "點心 / 少量母乳", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "20:00", feed: "母乳 200ml + 晚餐副食品", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
+      ],
+      10: [ // 10 個月
+        { time: "07:00", feed: "母乳 200ml + 早餐副食品", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "12:30", feed: "母乳 180ml + 午餐副食品", sleepStart: "13:00", sleepEnd: "14:00", poop: "少量" },
+        { time: "16:30", feed: "點心 / 水果", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "20:00", feed: "母乳 180ml + 晚餐副食品", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
+      ],
+      11: [ // 11 個月
+        { time: "07:00", feed: "奶 180ml + 早餐固體", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "12:30", feed: "奶 150ml + 午餐固體", sleepStart: "13:00", sleepEnd: "14:00", poop: "少量" },
+        { time: "16:30", feed: "點心 / 少量奶", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "20:00", feed: "奶 150ml + 晚餐固體", sleepStart: "20:30", sleepEnd: "07:00", poop: "正常" }
+      ],
+      12: [ // 12 個月：逐漸接近幼兒餐
+        { time: "07:30", feed: "牛奶 / 配方奶 150ml + 早餐固體", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "12:30", feed: "少量奶 + 午餐固體", sleepStart: "13:00", sleepEnd: "14:00", poop: "正常" },
+        { time: "16:00", feed: "點心", sleepStart: "", sleepEnd: "", poop: "" },
+        { time: "19:30", feed: "少量奶 + 晚餐固體", sleepStart: "20:00", sleepEnd: "07:30", poop: "" }
+      ]
+    };
+
+    // 通用預設（如果使用者按「載入通用預設」）
+    const genericDefaultReference = [
+      { time: "06:30", feed: "母乳 120ml", sleepStart: "", sleepEnd: "", poop: "少量" },
+      { time: "09:30", feed: "母乳 100ml", sleepStart: "10:00", sleepEnd: "11:00", poop: "" },
+      { time: "13:00", feed: "母乳 120ml", sleepStart: "13:30", sleepEnd: "14:30", poop: "正常" },
+      { time: "17:30", feed: "母乳 110ml", sleepStart: "", sleepEnd: "", poop: "" },
+      { time: "21:00", feed: "母乳 130ml", sleepStart: "21:30", sleepEnd: "06:00", poop: "" }
+    ];
+
+    const clampMonth = (m) => {
+      if (m == null) return 0;
+      if (m < 0) return 0;
+      if (m > 12) return 12;
+      return m;
+    };
+
+    const getDefaultReferenceForMonth = (month) => {
+      month = clampMonth(month);
+      if (referenceByMonth[month]) return referenceByMonth[month];
+      if (month <= 1) return referenceByMonth[0];
+      if (month <= 3) return referenceByMonth[2];
+      if (month <= 5) return referenceByMonth[4];
+      if (month <= 7) return referenceByMonth[6];
+      if (month <= 12) return referenceByMonth[8];
+      return referenceByMonth[12];
+    };
+
     const babyBirthDateInput = document.getElementById("babyBirthDate");
     const babyAgeText = document.getElementById("babyAgeText");
     const babyAgeChip = document.getElementById("baby-age-chip");
@@ -439,8 +553,10 @@
     const forecastTableBody = document.getElementById("forecastTableBody");
     const planTimeline = document.getElementById("planTimeline");
     const loadReferenceBtn = document.getElementById("loadReferenceBtn");
+    const reloadRefForAgeBtn = document.getElementById("reloadRefForAgeBtn");
     const refreshPlanBtn = document.getElementById("refreshPlanBtn");
     const exportCsvBtn = document.getElementById("exportCsvBtn");
+    const currentRefMonthLabel = document.getElementById("currentRefMonthLabel");
 
     const recordDateInput = document.getElementById("recordDate");
     const recordTimeInput = document.getElementById("recordTime");
@@ -453,18 +569,24 @@
     const recordList = document.getElementById("recordList");
     const recordDateFilter = document.getElementById("recordDateFilter");
 
-    // 預設參考模板（單日 5 筆）
-    const defaultReference = [
-      { time: "06:30", feed: "母乳 120ml", sleepStart: "", sleepEnd: "", poop: "少量" },
-      { time: "09:30", feed: "母乳 100ml", sleepStart: "10:00", sleepEnd: "11:00", poop: "" },
-      { time: "13:00", feed: "母乳 120ml", sleepStart: "13:30", sleepEnd: "14:30", poop: "正常" },
-      { time: "17:30", feed: "母乳 110ml", sleepStart: "", sleepEnd: "", poop: "" },
-      { time: "21:00", feed: "母乳 130ml", sleepStart: "21:30", sleepEnd: "06:00", poop: "" }
-    ];
+    const loadRecords = () => loadJSON(LS_KEYS.RECORDS, []);
+    const saveRecords = (records) => {
+      saveJSON(LS_KEYS.RECORDS, records);
+      renderRecordList();
+      populateRecordDateFilter();
+    };
 
-    // ========= 參考模板渲染與編輯 =========
+    const clearRecordForm = () => {
+      recordDateInput.value = todayISO();
+      recordTimeInput.value = "";
+      recordFeedInput.value = "";
+      recordSleepStartInput.value = "";
+      recordSleepEndInput.value = "";
+      recordPoopInput.value = "";
+    };
+
     const renderReferenceTable = () => {
-      const ref = loadJSON(LS_KEYS.REFERENCE, defaultReference);
+      const ref = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
       referenceTableBody.innerHTML = "";
       ref.forEach((row, index) => {
         const tr = document.createElement("tr");
@@ -493,30 +615,12 @@
         input.addEventListener("change", () => {
           const index = parseInt(input.dataset.refIndex, 10);
           const field = input.dataset.field;
-          const ref = loadJSON(LS_KEYS.REFERENCE, defaultReference);
+          const ref = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
           if (!ref[index]) return;
           ref[index][field] = input.value;
           saveJSON(LS_KEYS.REFERENCE, ref);
         });
       });
-    };
-
-    // ========= 歷史記錄 =========
-    const loadRecords = () => loadJSON(LS_KEYS.RECORDS, []);
-
-    const saveRecords = (records) => {
-      saveJSON(LS_KEYS.RECORDS, records);
-      renderRecordList();
-      populateRecordDateFilter();
-    };
-
-    const clearRecordForm = () => {
-      recordDateInput.value = todayISO();
-      recordTimeInput.value = "";
-      recordFeedInput.value = "";
-      recordSleepStartInput.value = "";
-      recordSleepEndInput.value = "";
-      recordPoopInput.value = "";
     };
 
     const renderRecordList = () => {
@@ -534,7 +638,7 @@
         return;
       }
 
-      filtered.forEach((r, idx) => {
+      filtered.forEach((r) => {
         const card = document.createElement("div");
         card.className = "muji-card px-3 py-2 flex flex-col gap-1 text-[11px]";
         card.innerHTML = `
@@ -610,26 +714,23 @@
       saveRecords(records);
     };
 
-    // ========= 預測資料 =========
     const loadForecasts = () => loadJSON(LS_KEYS.FORECASTS, []);
     const saveForecasts = (forecasts) => {
       saveJSON(LS_KEYS.FORECASTS, forecasts);
     };
 
-    // 找出最近 N 天與參考模板可比較的差異（時間欄位）
     const computeAverageShiftMinutes = () => {
       const records = loadRecords();
-      const reference = loadJSON(LS_KEYS.REFERENCE, defaultReference);
+      const reference = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
       const byDate = {};
       records.forEach(r => {
         if (!byDate[r.date]) byDate[r.date] = [];
         byDate[r.date].push(r);
       });
 
-      const dates = Object.keys(byDate).sort().reverse(); // 由近至遠
+      const dates = Object.keys(byDate).sort().reverse();
       const considerDates = dates.slice(0, 3);
-
-      const shifts = []; // 所有 (實際時間 - 參考時間) 的差
+      const shifts = [];
 
       considerDates.forEach(date => {
         const dayRecords = byDate[date];
@@ -647,24 +748,6 @@
       if (shifts.length === 0) return 0;
       const sum = shifts.reduce((a, b) => a + b, 0);
       return Math.round(sum / shifts.length);
-    };
-
-    const runForecast = () => {
-      const reference = loadJSON(LS_KEYS.REFERENCE, defaultReference);
-      const shift = computeAverageShiftMinutes();
-      const forecastRows = reference.map(row => {
-        const base = parseTimeToMinutes(row.time);
-        const forecastTime = base == null ? "" : minutesToTime(base + shift);
-        return {
-          time: forecastTime,
-          feed: row.feed,
-          sleepStart: row.sleepStart,
-          sleepEnd: row.sleepEnd,
-          poop: row.poop
-        };
-      });
-      renderForecastTable(forecastRows);
-      return forecastRows;
     };
 
     const renderForecastTable = (rows) => {
@@ -693,17 +776,37 @@
       });
     };
 
+    const runForecast = () => {
+      const reference = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
+      const shift = computeAverageShiftMinutes();
+      const forecastRows = reference.map(row => {
+        const base = parseTimeToMinutes(row.time);
+        const forecastTime = base == null ? "" : minutesToTime(base + shift);
+        return {
+          time: forecastTime,
+          feed: row.feed,
+          sleepStart: row.sleepStart,
+          sleepEnd: row.sleepEnd,
+          poop: row.poop
+        };
+      });
+      renderForecastTable(forecastRows);
+      return forecastRows;
+    };
+
     const getForecastTableData = () => {
       const rows = [];
-      forecastTableBody.querySelectorAll("tr").forEach((tr, idx) => {
-        const inputs = tr.querySelectorAll(".forecast-input");
-        const row = { time: "", feed: "", sleepStart: "", sleepEnd: "", poop: "" };
-        inputs.forEach(input => {
-          const field = input.dataset.field;
-          row[field] = input.value;
-        });
-        rows.push(row);
+      forecastTableBody.querySelectorAll("tr").forEach(() => {
+        rows.push({ time: "", feed: "", sleepStart: "", sleepEnd: "", poop: "" });
       });
+
+      forecastTableBody.querySelectorAll(".forecast-input").forEach(input => {
+        const rowIndex = parseInt(input.dataset.row, 10);
+        const field = input.dataset.field;
+        if (!rows[rowIndex]) return;
+        rows[rowIndex][field] = input.value;
+      });
+
       return rows;
     };
 
@@ -793,10 +896,9 @@
       planTimeline.appendChild(block);
     };
 
-    // ========= 匯出 CSV =========
     const exportToCsv = () => {
       const birth = localStorage.getItem(LS_KEYS.BIRTH_DATE) || "";
-      const reference = loadJSON(LS_KEYS.REFERENCE, defaultReference);
+      const reference = loadJSON(LS_KEYS.REFERENCE, genericDefaultReference);
       const records = loadRecords();
       const forecasts = loadForecasts();
 
@@ -838,7 +940,6 @@
       URL.revokeObjectURL(url);
     };
 
-    // ========= Tabs =========
     const tabButtons = document.querySelectorAll("button.tab-btn");
     const tabSections = {
       plan: document.getElementById("tab-plan"),
@@ -868,14 +969,31 @@
       });
     });
 
-    // ========= 事件綁定 =========
+    const describeRefMonth = (m) => {
+      m = clampMonth(m);
+      if (m === null) return "尚未計算";
+      if (m === 0) return "0 個月（新生兒少量多餐）";
+      if (m === 1) return "1 個月（每 3 小時餵）";
+      if (m === 2) return "2 個月（約 6–7 餐）";
+      if (m === 3) return "3 個月（約 6 餐）";
+      if (m === 4 || m === 5) return m + " 個月（每 4 小時左右）";
+      if (m === 6 || m === 7) return m + " 個月（開始副食品）";
+      if (m >= 8 && m <= 12) return m + " 個月（3 次奶搭配固體餐）";
+      return m + " 個月";
+    };
+
+    const initReferenceForAgeIfEmpty = (months) => {
+      if (!localStorage.getItem(LS_KEYS.REFERENCE)) {
+        const ref = getDefaultReferenceForMonth(months);
+        saveJSON(LS_KEYS.REFERENCE, ref);
+      }
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
-      // 初始日期
       const today = todayISO();
       todayDateLabel.textContent = `今天：${today}`;
       recordDateInput.value = today;
 
-      // 載入生日
       const birth = localStorage.getItem(LS_KEYS.BIRTH_DATE) || "";
       if (birth) {
         babyBirthDateInput.value = birth;
@@ -885,21 +1003,15 @@
       babyAgeText.textContent = `目前月齡：約 ${ageTextStr}。`;
       babyAgeChip.textContent = ageTextStr;
       forecastAgeChip.textContent = `預測以 ${ageTextStr} 為參考。`;
+      currentRefMonthLabel.textContent = describeRefMonth(months);
 
-      // 參考模板
-      if (!localStorage.getItem(LS_KEYS.REFERENCE)) {
-        saveJSON(LS_KEYS.REFERENCE, defaultReference);
-      }
+      initReferenceForAgeIfEmpty(months);
       renderReferenceTable();
 
-      // 歷史記錄
       renderRecordList();
       populateRecordDateFilter();
 
-      // 預測表初始化
       renderForecastTable(runForecast());
-
-      // PLAN
       renderPlanTimeline();
     });
 
@@ -915,12 +1027,28 @@
       babyAgeText.textContent = `目前月齡：約 ${ageTextStr}。`;
       babyAgeChip.textContent = ageTextStr;
       forecastAgeChip.textContent = `預測以 ${ageTextStr} 為參考。`;
+      currentRefMonthLabel.textContent = describeRefMonth(months);
     });
 
     loadReferenceBtn.addEventListener("click", () => {
-      if (!confirm("確定要載入預設範例？這會覆蓋目前參考模板。")) return;
-      saveJSON(LS_KEYS.REFERENCE, defaultReference);
+      if (!confirm("確定要載入通用預設？這會覆蓋目前參考模板。")) return;
+      saveJSON(LS_KEYS.REFERENCE, genericDefaultReference);
       renderReferenceTable();
+    });
+
+    reloadRefForAgeBtn.addEventListener("click", () => {
+      const birth = localStorage.getItem(LS_KEYS.BIRTH_DATE) || babyBirthDateInput.value;
+      const months = computeMonthAge(birth);
+      if (months == null) {
+        alert("請先設定嬰兒出生日期。");
+        return;
+      }
+      if (!confirm(`將依照目前月齡（約 ${formatAgeText(months)}）重設參考模板，會覆蓋你已修改的內容，確定繼續？`)) return;
+      const ref = getDefaultReferenceForMonth(months);
+      saveJSON(LS_KEYS.REFERENCE, ref);
+      renderReferenceTable();
+      currentRefMonthLabel.textContent = describeRefMonth(months);
+      alert("已依月齡載入新的參考模板。");
     });
 
     addRecordBtn.addEventListener("click", () => {
@@ -953,7 +1081,7 @@
 
     runForecastBtn.addEventListener("click", () => {
       const rows = runForecast();
-      alert("已根據最近歷史記錄更新預測時間。");
+      alert("已根據最近歷史記錄與月齡模板更新預測時間。");
       renderPlanTimeline();
     });
 
@@ -983,5 +1111,4 @@
 </body>
 </html>
 
-
-Add index.html
+add index.html
